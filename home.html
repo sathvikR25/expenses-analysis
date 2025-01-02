@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <style>
+        body {
+            background-image: url("https://static.vecteezy.com/system/resources/previews/009/160/190/non_2x/successful-businessman-standing-next-to-pie-chart-free-vector.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: rgb(43, 4, 4);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select, .form-group button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .form-group button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #218838;
+        }
+        #expense-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        #expense-table th, #expense-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        #expense-table th {
+            background-color: #f4f4f4;
+        }
+        #charts-container {
+            margin-top: 30px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Expense Tracker</h1>
+
+        <!-- Form to add expenses -->
+        <div class="form-group">
+            <h2>Add New Expense</h2>
+            <label for="amount">Amount (₹)</label>
+            <input type="number" id="amount" placeholder="Enter amount" required>
+            
+            <label for="category">Category</label>
+            <select id="category">
+                <option value="food">Food</option>
+                <option value="travel">Travel</option>
+                <option value="utilities">Utilities</option>
+                <option value="entertainment">Entertainment</option>
+                <option value="others">Others</option>
+            </select>
+            
+            <label for="date">Date</label>
+            <input type="date" id="date" required>
+
+            <label for="payment">Payment</label>
+            <select id="payment">
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+            </select>
+            
+            <button onclick="submitExpense()">Add Expense</button>
+        </div>
+
+        <!-- Button to view stored expenses -->
+        <div class="form-group">
+            <button onclick="fetchExpenses()">View Expenses</button>
+        </div>
+
+        <!-- Table to display fetched expenses -->
+        <div class="form-group">
+            <h2>Stored Expenses</h2>
+            <table id="expense-table">
+                <thead>
+                    <tr>
+                        <th>Amount (₹)</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Container for charts -->
+        <div id="charts-container">
+            <h2>Expense Charts</h2>
+            <canvas id="categoryChart"></canvas>
+            <canvas id="dateChart"></canvas>
+            <canvas id="categoryBarChart"></canvas>
+            <canvas id="categoryDoughnutChart"></canvas>
+            <canvas id="categoryLineChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.title = 'Updated Dynamic Title';
+
+        // Function to submit a new expense
+        function submitExpense() {
+            const amount = document.getElementById('amount').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            const payment = document.getElementById('payment').value;
+
+            if (amount && category && date && payment) {
+                fetch('http://localhost:3000/api/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ amount, category, date, payment })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        /*alert('Expense added successfully!');*/
+                        document.getElementById('amount').value = '';
+                        document.getElementById('category').selectedIndex = 0;
+                        document.getElementById('date').value = '';
+                        document.getElementById('payment').selectedIndex = 0;
+                        fetchExpenses(); // Refresh the expense list
+                    } else {
+                        alert('Failed to add expense. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while adding the expense.');
+                });
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+
+        // Function to fetch and display expenses
+        function fetchExpenses() {
+            fetch('http://localhost:3000/api/expenses')
+                .then(response => response.json())
+                .then(expenses => {
+                    const expenseTableBody = document.getElementById('expense-table').querySelector('tbody');
+                    expenseTableBody.innerHTML = ''; // Clear the table first
+
+                    if (expenses.length > 0) {
+                        expenses.forEach(expense => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `<td>₹${expense.amount}</td><td>${expense.category}</td><td>${expense.date}</td><td>${expense.payment}</td>`;
+                            expenseTableBody.appendChild(row);
+                        });
+                        generateCharts(expenses); // Generate charts with the fetched expenses
+                    } else {
+                        expenseTableBody.innerHTML = '<tr><td colspan="4">No expenses found.</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    /*alert('An error occurred while fetching expenses from the database.');*/
+                });
+        }
+
+        // Function to generate charts
+        function generateCharts(expenses) {
+            // Aggregate data by category
+            const categoryData = expenses.reduce((acc, expense) => {
+                acc[expense.category] = (acc[expense.category] || 0) + parseFloat(expense.amount);
+                return acc;
+            }, {});
+
+            // Aggregate data by date
+            const dateData = expenses.reduce((acc, expense) => {
+                acc[expense.date] = (acc[expense.date] || 0) + parseFloat(expense.amount);
+                return acc;
+            }, {});
+
+            
+
+            // Create category chart
+            const totalAmount = Object.values(categoryData).reduce((acc, value) => acc + value, 0);
+
+            const categoryChartCtx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(categoryChartCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        label: 'Expenses by Category',
+                        data: Object.values(categoryData),
+                        backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                },
+                plugins: [{ afterDraw: chart => { const ctx = chart.ctx; const width = chart.width; const height = chart.height; 
+                    const text = `Total: ₹${totalAmount.toFixed(2)}`; 
+                    // Draw the total amount at the bottom 
+                    ctx.restore(); ctx.font = 'bold 14px Arial';
+                     ctx.textBaseline = 'middle'; 
+                     const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                      const textY = height - 20; 
+                // Adjust this value as needed 
+                ctx.fillText(text, textX, textY); 
+                ctx.save(); 
+            } 
+        }] 
+    });
+           
+            
+            // Create category bar chart
+            const categoryBarChartCtx = document.getElementById('categoryBarChart').getContext('2d');
+            new Chart(categoryBarChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        label: 'Expenses by Category',
+                        data: Object.values(categoryData),
+                        backgroundColor: '#FE9898'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Create category doughnut chart
+            
+            const categoryDoughnutChartCtx = document.getElementById('categoryDoughnutChart').getContext('2d');
+
+
+new Chart(categoryDoughnutChartCtx, {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(categoryData),
+        datasets: [{
+            label: 'Expenses by Category',
+            data: Object.values(categoryData),
+            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    },
+    plugins: [{
+        afterDraw: chart => {
+            const ctx = chart.ctx;
+            const width = chart.width;
+            const height = chart.height;
+            const text = `₹${totalAmount.toFixed(2)}`;
+            ctx.restore();
+            ctx.font = 'bold 16px Arial';
+            ctx.textBaseline = 'middle';
+            const textX = Math.round((width - ctx.measureText(text).width) / 2);
+            const textY = height / 2;
+            ctx.fillText(text, textX, textY);
+            ctx.save();
+        }
+    }]
+});
+
+        }
+        // create category line chart
+        
+        const categoryLineChartCtx = document.getElementById('categoryLineChart').getContext('2d');
+new Chart(categoryLineChartCtx, {
+    type: 'line', // Changed to 'line'
+    data: {
+        labels: Object.keys(categoryData),
+        datasets: [{
+            label: 'Expenses by Category',
+            data: Object.values(categoryData),
+            backgroundColor: '#36a2eb',
+            borderColor: '#36a2eb', // Line color
+            fill: false // Optional: removes fill under the line
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+    </script>
+</body>
+</html>

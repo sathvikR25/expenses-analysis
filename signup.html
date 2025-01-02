@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup - expenses</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('https://cdn.vectorstock.com/i/1000v/07/91/businessman-turning-quality-meter-arrow-back-vector-38880791.avif');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            background-color: #000;
+        }
+        .signup-container {
+            max-width: 550px;
+            padding: 40px;
+            background-color: #d6f9fcae;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            color: #150c0c;
+        }
+        .form-label,
+        .text-center a {
+            color: #000000;
+        }
+        .form-control {
+            background-color: hsl(207, 45%, 91%);
+            color: #fff;
+            border: 1px solid #fff;
+        }
+        .form-control::placeholder {
+            color: #120a0a;
+        }
+        .form-control:focus {
+            background-color: #bed1df;
+            border-color: #555;
+            box-shadow: none;
+        }
+        .btn-primary {
+            width: 100%;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .invalid-feedback {
+            display: none;
+            color: #ff6b6b;
+        }
+        .invalid-feedback.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="signup-container">
+            <h3 class="text-center mb-4"><center>Sign Up</center></h3>
+            <form id="signupForm">
+                <div class="mb-3">
+                    <label for="signup-firstname" class="form-label"><b>First Name</b></label>
+                    <input type="text" class="form-control" id="signup-firstname" placeholder="Enter First Name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-lastname" class="form-label"><b>Last Name</b></label>
+                    <input type="text" class="form-control" id="signup-lastname" placeholder="Enter Last Name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-username" class="form-label"><b>Username</b></label>
+                    <input type="text" class="form-control" id="signup-username" placeholder="Enter Username" required>
+                    <div class="invalid-feedback">Please enter a valid username (letters only).</div>
+                </div>
+                <div class="mb-3">
+                    <label for="signup-password" class="form-label"><b>Password</b></label>
+                    <input type="password" class="form-control" id="signup-password" placeholder="Enter Password" required>
+                    <div class="invalid-feedback">Password must be at least 6 characters long.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Sign Up</button>
+                
+                <div class="mt-2 text-center">
+                    <a href="login.html">Already have an account? Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("signupForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const firstname = document.getElementById("signup-firstname").value;
+            const lastname = document.getElementById("signup-lastname").value;
+            const username = document.getElementById("signup-username").value;
+            const password = document.getElementById("signup-password").value;
+
+            let valid = true;
+
+            // Validate username (only alphabets)
+            if (!/^[a-zA-Z]+$/.test(username)) {
+                valid = false;
+                document.getElementById("signup-username").classList.add("is-invalid");
+                document.querySelector("#signup-username + .invalid-feedback").classList.add("show");
+            } else {
+                document.getElementById("signup-username").classList.remove("is-invalid");
+                document.querySelector("#signup-username + .invalid-feedback").classList.remove("show");
+            }
+
+            // Validate password (at least 6 characters)
+            if (password.length < 6) {
+                valid = false;
+                document.getElementById("signup-password").classList.add("is-invalid");
+                document.querySelector("#signup-password + .invalid-feedback").classList.add("show");
+            } else {
+                document.getElementById("signup-password").classList.remove("is-invalid");
+                document.querySelector("#signup-password + .invalid-feedback").classList.remove("show");
+            }
+
+            if (valid) {
+                // Send data to the backend
+                fetch('http://localhost:3000/register', {  // Updated to use full URL
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ firstname, lastname, username, password })
+                })
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    if (data === 'User registered successfully') {
+                        window.location.href = 'login.html';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    </script>
+</body>
+</html>
