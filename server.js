@@ -11,8 +11,8 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'pandu',
-  database: 'northwind'
+  password: 'PASSWORD',
+  database: 'DATABASE NAME'
 });
 
 // Connect to MySQL
